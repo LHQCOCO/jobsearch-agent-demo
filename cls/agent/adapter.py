@@ -61,7 +61,7 @@ class OllamaAdapter:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        # 显式禁用环境代理，避免合同片段被转发到本机之外
+        # 显式禁用环境代理，避免文档片段被转发到本机之外
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
             with opener.open(request, timeout=self.timeout) as resp:

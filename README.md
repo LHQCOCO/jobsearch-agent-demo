@@ -152,7 +152,7 @@ tests/                     71 个用例，8 个测试文件
 - 单机单用户。没有账号体系，数据存在本机 `data/`，不支持多人并发。
 - 审核规则只看实体。新增事实按机构、技术、数字、时间四类判定，措辞层面的夸大不会被拦下。
 - 简历解析不含 OCR。扫描件 PDF 会提示改用可复制文字的版本。
-- 样例简历是虚构内容，姓名、公司、邮箱均为占位，不对应真实个人。
+- 样例简历基于作者真实项目的公开描述改写，姓名、公司、邮箱为占位，不对应真实个人；样例 JD 是虚构岗位，不对应真实招聘。
 - 依赖版本未锁定。`requirements.txt` 使用 `>=` 下限，不同时间安装可能得到不同版本。
 - Windows 未纳入 CI，本仓库只在 macOS 上运行验证过。
 
@@ -174,6 +174,9 @@ tests/                     71 个用例，8 个测试文件
 | 简历上传上限 | 25 MB | `cls/parsing.py` 中 `MAX_BYTES` | 单份文件 |
 | JD 字数上限 | 40,000 字 | `cls/scenarios/jobsearch/web.py` 中 `MAX_JD_CHARS` | 超出直接报错，不截断 |
 | 简历字数上限 | 80,000 字 | `cls/scenarios/jobsearch/web.py` 中 `MAX_RESUME_CHARS` | 同上 |
+| 样例简历中的合同工具用例 | 385 个 | 公开仓 [contract-local-scan-demo](https://github.com/LHQCOCO/contract-local-scan-demo) 的 README，或在该仓库执行 `python -m pytest tests --collect-only -q` | 不是本仓库的 71 个 |
+| 样例简历中的规则与法规 | 191 条规则、1,480 部法规、63,653 条条文 | 同上的 README | 法规数是部数，63,653 是条文数 |
+| 样例简历中的源码行数 | Python 12,840 行、前端 2,565 行 | 在同上的仓库执行 `find . -name "*.py" -o -name "*.js" \| xargs wc -l` | 不含文档与样例数据 |
 | 演示动图 | 21 帧 / 共 11,600 ms | `python -c "from PIL import Image, ImageSequence; im=Image.open('docs/demo.gif'); print(len(list(ImageSequence.Iterator(im))), sum(f.info['duration'] for f in ImageSequence.Iterator(im)))"` | 900×625，页面录制后合成，相同画面已合并 |
 
 ## 许可

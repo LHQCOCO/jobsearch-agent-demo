@@ -12,4 +12,6 @@
 
 前端没有引入第三方框架或字体，`static/` 下的样式与脚本为本仓库自带；页面图标使用内联 SVG。
 
-`samples/jobs/` 下的 JD 与简历为演示用虚构内容，姓名、公司、邮箱均为占位，不对应真实个人或岗位。
+`samples/jobs/` 下的简历基于作者真实项目的公开描述改写，姓名、公司、邮箱已替换为占位符，不对应真实个人。简历中的项目指标（385 个用例、191 条规则、1,480 部法规 / 63,653 条条文、源码行数）取自公开仓 [LHQCOCO/contract-local-scan-demo](https://github.com/LHQCOCO/contract-local-scan-demo) 的 README 与源码统计，不是虚构数据。
+
+`samples/jobs/jd_ai_agent.md` 是虚构的岗位描述，公司与岗位不对应真实招聘需求。
