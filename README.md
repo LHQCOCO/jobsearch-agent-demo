@@ -6,7 +6,7 @@
 
 ![演示动图：打开页面 → 点「用样例试跑」→ 真实运行 → 浏览匹配矩阵、缺口、改写、证据打回记录与 trace 时间线](docs/demo.gif)
 
-动图由本仓库页面真实运行后录制，12 秒，循环播放。画面里的 URL、run_id 和数字都来自本地这次运行，没有预置结论。
+动图由本仓库页面真实运行后录制，58 帧、每帧 200 ms，循环播放。画面里的 URL、run_id 和数字都来自本地这次运行，没有预置结论。
 
 ![结果页：顶部是本次运行的步骤数与工具调用数，下面依次是匹配矩阵、缺口与选项、改写建议](docs/screenshot-result.png)
 
@@ -174,6 +174,7 @@ tests/                     71 个用例，8 个测试文件
 | 简历上传上限 | 25 MB | `cls/parsing.py` 中 `MAX_BYTES` | 单份文件 |
 | JD 字数上限 | 40,000 字 | `cls/scenarios/jobsearch/web.py` 中 `MAX_JD_CHARS` | 超出直接报错，不截断 |
 | 简历字数上限 | 80,000 字 | `cls/scenarios/jobsearch/web.py` 中 `MAX_RESUME_CHARS` | 同上 |
+| 演示动图 | 58 帧 / 200 ms 每帧 | `python -c "from PIL import Image; im=Image.open('docs/demo.gif'); print(im.n_frames, im.info.get('duration'))"` | 页面 900×625 录制后合成 |
 
 ## 许可
 
