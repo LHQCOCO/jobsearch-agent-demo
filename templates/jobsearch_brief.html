@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投递决策卡 · {{ run_id }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='jobsearch.css') }}">
+</head>
+<body class="js-page">
+<main class="jmain">
+  <section class="panel">
+    <div class="panel-head slim">
+      <div><div class="eyebrow"><span></span>BRIEF</div><h2>投递决策卡</h2></div>
+      <a class="btn ghost sm" href="{{ url_for('jobsearch.jobsearch_page') }}">返回演示页</a>
+    </div>
+    <p class="jnotice">由本次真实运行生成的 Markdown 原样展示：<code>data/exports/{{ run_id }}-brief.md</code></p>
+    <pre class="jbrief">{{ content }}</pre>
+  </section>
+</main>
+</body>
+</html>

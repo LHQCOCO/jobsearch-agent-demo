@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>求职决策 Agent · 本地演示</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='jobsearch.css') }}">
+</head>
+<body class="js-page">
+<svg class="svg-sprite" aria-hidden="true">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.4c0 4.3-2.9 7.8-7 9.6-4.1-1.8-7-5.3-7-9.6V6l7-3z"/><path d="M8.6 12.2l2.2 2.2 4.4-4.6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h6M10 16h6"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 9v5.5M12 17.5v.2"/></symbol>
+</svg>
+
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark"><svg><use href="#i-shield"/></svg></span>
+    <span class="brand-text"><strong>JobSearch <em>Agent</em></strong><small>求职决策 · 本地演示</small></span>
+  </a>
+  <div class="topbar-center">
+    <span class="topbar-rule"></span>
+    <span class="topbar-note">规则实现 × 本地运行 × 不投递 · 页面数据来自真实运行与 trace</span>
+  </div>
+  <div class="topbar-right">
+    <span class="pill privacy"><i></i>数据不出本机</span>
+    <a class="pill model" href="{{ url_for('jobsearch.jobsearch_page') }}?autorun=1"><span class="dot"></span>用样例试跑</a>
+  </div>
+</header>
+
+<main class="jmain">
+
+  <section class="jhero">
+    <div class="jhero-copy">
+      <div class="eyebrow"><span></span>JOBSEARCH DECISION AGENT · LOCAL DEMO</div>
+      <h1>求职决策 Agent</h1>
+      <p>粘贴 JD 与简历，点击一次开始：解析岗位要求、逐条比对简历证据、给出缺口与选项、生成只改措辞的改写建议；改写会先过证据层审核，被驳回的条目与第二轮的改法一并留在页面上。</p>
+      <div class="jhero-tags">
+        <span class="jtag">复用同一套 AgentRuntime</span>
+        <span class="jtag">EvidenceChecker 打回</span>
+        <span class="jtag">Trace 可回放</span>
+      </div>
+    </div>
+    <aside class="jstatus">
+      <div class="jstatus-head">当前能力状态</div>
+      <div class="jstatus-row"><span>判定 / 改写 / 审核</span><b class="ok">规则实现（确定性）</b></div>
+      <div class="jstatus-row"><span>本地模型增强</span><b class="warn">未接入本页</b></div>
+      <div class="jstatus-row"><span>JD 来源</span><b>手工粘贴</b></div>
+      <div class="jstatus-row"><span>自动投递 / 爬虫</span><b class="ok">无</b></div>
+      <p class="jstatus-note">模型即使接入，也只用于规划器选择执行哪些固定步骤，不参与匹配判定与事实审核。</p>
+    </aside>
+  </section>
+
+  {% macro input_body() %}
+  <div class="jform-body">
+    <div class="panel-head slim">
+      <div>
+        <div class="eyebrow"><span></span>INPUT</div>
+        <h2>粘贴岗位与简历</h2>
+      </div>
+      <span class="badge-soft">规则实现 · 无前端构建链</span>
+    </div>
+    {% if error %}<div class="jerror"><svg><use href="#i-alert"/></svg>{{ error }}</div>{% endif %}
+    {% if autorun %}<div class="jnotice">本次结果由仓库样例 <code>samples/jobs/jd_ai_agent.md</code> 与 <code>samples/jobs/resume_sample.md</code> 真实运行产生，未使用任何预置结论。</div>{% endif %}
+    <form class="jform" method="post" action="{{ url_for('jobsearch.jobsearch_analyze') }}" enctype="multipart/form-data">
+      <label class="jfield">
+        <span>JD 正文 <em>必填 · 手工粘贴</em></span>
+        <textarea name="jd_text" rows="12" placeholder="把招聘网站上的岗位描述整段粘贴到这里……">{{ jd_text }}</textarea>
+      </label>
+      <div class="jresume">
+        <label class="jfield">
+          <span>简历正文 <em>粘贴，或上传 .md / .txt / .docx / .pdf</em></span>
+          <textarea name="resume_text" rows="12" placeholder="把简历文本粘贴到这里；上传文件时以文件为准……">{{ resume_text }}</textarea>
+        </label>
+        <label class="jfile">
+          <input type="file" name="resume_file" id="resumeFile" accept=".md,.txt,.docx,.pdf">
+          <span class="jfile-btn">选择简历文件</span>
+          <span class="jfile-name" id="resumeFileName">未选择文件（也可直接粘贴）</span>
+        </label>
+      </div>
+      <div class="jactions">
+        <button class="btn primary lg" type="submit" id="btnAnalyze">开始分析</button>
+        <a class="btn ghost lg" href="{{ url_for('jobsearch.jobsearch_page') }}?autorun=1">用仓库样例试跑</a>
+        <label class="jcheck"><input type="checkbox" name="save"> 同时写入本地投递记录</label>
+        <span class="jcost">一次运行 = 6 个步骤，纯本地计算，通常 1 秒内完成</span>
+      </div>
+    </form>
+  </div>
+  {% endmacro %}
+
+  {% if result %}
+  <details class="panel jform-panel jfold">
+    <summary class="jfold-summary">
+      <span>本次输入</span>
+      <b>{{ result.jd.get('title', '') or '未识别岗位' }}</b>
+      <small>{{ result.resume.get('stats', {}).get('chars', 0) }} 字简历 · {{ result.jd.get('must_have', [])|length + result.jd.get('nice_to_have', [])|length }} 条要求</small>
+      <em>展开查看 / 修改</em>
+    </summary>
+    {{ input_body() }}
+  </details>
+  {% else %}
+  <section class="panel jform-panel">{{ input_body() }}</section>
+  {% endif %}
+
+  {% if result %}
+  <section class="jmeta">
+    <div><span>run_id</span><b>{{ result.run_id }}</b></div>
+    <div><span>状态</span><b>{{ result.status }} / {{ result.stop_reason }}</b></div>
+    <div><span>步骤</span><b>{{ result.metrics.get('steps', 0) }}</b></div>
+    <div><span>工具调用</span><b>{{ result.metrics.get('tool_calls', 0) }}</b></div>
+    <div><span>耗时</span><b>{{ result.metrics.get('wall_ms', 0) }} ms</b></div>
+    <div><span>trace</span><b>data/agent_traces/{{ result.trace_name }}</b></div>
+    {% if result.brief_name %}<div><span>决策卡</span><b><a href="{{ url_for('jobsearch.jobsearch_brief', run_id=result.run_id) }}">{{ result.brief_name }}</a></b></div>{% endif %}
+  </section>
+
+  <section class="jcounts">
+    <div class="jcount"><span>JD 要求</span><b>{{ result.counts.get('total', 0) }}</b><small>{{ result.jd.get('title', '') }}{% if result.jd.get('company') %} · {{ result.jd.get('company') }}{% endif %}</small></div>
+    <div class="jcount covered"><span>覆盖</span><b>{{ result.counts.get('covered', 0) }}</b><small>简历有命中且证据可定位</small></div>
+    <div class="jcount partial"><span>部分</span><b>{{ result.counts.get('partial', 0) }}</b><small>关键词不足或证据无法定位</small></div>
+    <div class="jcount missing"><span>缺少</span><b>{{ result.counts.get('missing', 0) }}</b><small>简历中未见相关表述</small></div>
+    <div class="jcount"><span>简历</span><b>{{ result.resume.get('stats', {}).get('chars', 0) }}</b><small>{{ result.resume.get('stats', {}).get('sections', 0) }} 节 / {{ result.resume.get('stats', {}).get('sentences', 0) }} 句</small></div>
+  </section>
+
+  <section class="panel" id="matrix">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow"><span></span>MATCH MATRIX</div>
+        <h2>匹配矩阵</h2>
+      </div>
+      <span class="panel-tip">逐条判定 · 证据取自简历原文 span</span>
+    </div>
+    <div class="jtable-wrap">
+      <table class="jtable">
+        <thead><tr><th>#</th><th>JD 要求</th><th>判定</th><th>简历证据</th><th>理由</th></tr></thead>
+        <tbody>
+        {% for m in result.matches %}
+          <tr>
+            <td class="jnum">{{ loop.index }}</td>
+            <td class="jreq">{{ m.requirement }}</td>
+            <td><span class="jbadge {{ m.status }}">{{ m.status_label }}</span></td>
+            <td>
+              {% if m.evidence %}
+                {% for e in m.evidence %}
+                <div class="jquote">“{{ e.quote }}”<small>{{ e.section or '未分节' }} · span {{ e.span.start }}–{{ e.span.end }}</small></div>
+                {% endfor %}
+              {% else %}
+                <span class="jnone">无可引用原文</span>
+              {% endif %}
+            </td>
+            <td class="jreason">{{ m.reason }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="gaps">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow"><span></span>GAPS &amp; OPTIONS</div>
+        <h2>缺口与选项</h2>
+      </div>
+      <span class="panel-tip">按缺少 → 部分的优先级排序</span>
+    </div>
+    {% if result.gaps %}
+    <div class="jtable-wrap">
+      <table class="jtable">
+        <thead><tr><th>缺口</th><th>严重度</th><th>判定</th><th>可选动作</th><th>为什么</th><th>最接近的原文</th></tr></thead>
+        <tbody>
+        {% for gap in result.gaps %}
+          <tr>
+            <td class="jreq">{{ gap.gap }}</td>
+            <td><span class="jbadge sev-{{ gap.severity }}">{{ gap.severity_label }}</span></td>
+            <td><span class="jbadge {{ gap.status }}">{{ gap.status_label }}</span></td>
+            <td>{% for opt in gap.options %}<span class="jopt">{{ opt }}</span>{% endfor %}</td>
+            <td class="jreason">{{ gap.reason }}</td>
+            <td class="jreason">{% if gap.nearest_hit %}<div class="jquote">“{{ gap.nearest_hit }}”</div>{% else %}<span class="jnone">无</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="jempty">本次运行没有产生缺口。</p>{% endif %}
+  </section>
+
+  <section class="panel" id="rewrites">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow"><span></span>REWRITE</div>
+        <h2>改写建议</h2>
+      </div>
+      <span class="panel-tip">只改措辞 · 事实必须能在简历原文定位</span>
+    </div>
+    {% if result.bullets %}
+      {% for b in result.bullets %}
+      <article class="jbullet">
+        <div class="jbullet-head"><span class="jindex">{{ loop.index }}</span><b>{{ b.text }}</b></div>
+        {% if b.source_text %}
+        <div class="jbullet-row"><span>原文</span><p>{{ b.source_text }}</p></div>
+        {% endif %}
+        <div class="jbullet-row"><span>依据句子</span><p>{{ b.based_on_spans|join('、') if b.based_on_spans else '—' }}</p></div>
+        {% if b.requirement %}<div class="jbullet-row"><span>对应要求</span><p>{{ b.requirement }}</p></div>{% endif %}
+        <div class="jbullet-foot">
+          {% if b.rewritten %}<span class="jbadge partial">已改写措辞</span>{% elif b.source_text %}<span class="jbadge covered">原句已覆盖，未改动</span>{% endif %}
+          {% if b.req_id %}<code>req_id={{ b.req_id }}</code>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    {% else %}<p class="jempty">本次运行没有可改写素材。</p>{% endif %}
+  </section>
+
+  <section class="panel" id="audit">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow"><span></span>EVIDENCE AUDIT</div>
+        <h2>证据层打回记录</h2>
+      </div>
+      <span class="badge-soft {{ 'ok' if result.audit_ok else 'warn' }}">审核{{ '通过' if result.audit_ok else '未通过' }} · {{ result.audit_rounds }} 轮</span>
+    </div>
+    {% if result.rejected_items %}
+      <div class="jrejects">
+      {% for item in result.rejected_items %}
+        <article class="jreject">
+          <div class="jreject-top">
+            <span class="jbadge missing">第 {{ item.round }} 轮被打回</span>
+            <b>{{ item.reason_code }}</b>
+            <span class="jreject-rule">{{ item.requirement or item.req_id }}</span>
+          </div>
+          <p class="jreject-text">{{ item.text }}</p>
+          <div class="jreject-meta">证据层理由：{{ item.detail or '—' }}</div>
+          <div class="jreject-next"><span>第二轮</span><p>{{ item.next_action }}{% if item.next_text %}：{{ item.next_text }}{% endif %}</p></div>
+        </article>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p class="jempty">本次运行首轮即通过，没有打回记录。</p>
+    {% endif %}
+
+    {% for r in result.rounds %}
+    <div class="jround">
+      <div class="jround-head">
+        <b>第 {{ r.round }} 轮草稿</b>
+        <span>{{ r.bullets|length }} 条 · 打回 {{ r.rejected|length }} 条</span>
+      </div>
+      <div class="jtable-wrap">
+        <table class="jtable compact">
+          <thead><tr><th>#</th><th>草稿</th><th>对应要求</th><th>审核</th><th>说明</th></tr></thead>
+          <tbody>
+          {% for b in r.bullets %}
+            <tr class="{{ 'is-reject' if b.verdict == 'reject' else '' }}">
+              <td class="jnum">{{ loop.index }}</td>
+              <td>{{ b.text }}</td>
+              <td class="jreason">{{ b.requirement or b.req_id }}</td>
+              <td>{% if b.verdict == 'reject' %}<span class="jbadge missing">打回</span>{% elif b.verdict == 'confirmed' %}<span class="jbadge covered">通过</span>{% else %}<span class="jnone">—</span>{% endif %}</td>
+              <td class="jreason">{{ b.detail or ('新增事实，未通过证据核对' if b.reason_code == 'FACT_ADDED' else '') }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="panel" id="trace">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow"><span></span>TRACE</div>
+        <h2>运行时间线</h2>
+      </div>
+      <span class="panel-tip">data/agent_traces/{{ result.trace_name }} · 共 {{ result.trace_total }} 条，已折叠工具调用明细</span>
+    </div>
+    <div class="jtrace">
+      {% for e in result.trace %}
+      <div class="jevent {{ 'is-verify' if e.event == 'verify.result' else '' }}">
+        <span class="jseq">{{ e.seq }}</span>
+        <span class="jev">{{ e.label }}</span>
+        <span class="jdetail">{{ e.summary }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="panel jempty-panel">
+    <div class="panel-head slim"><div><div class="eyebrow"><span></span>RESULT</div><h2>还没有运行结果</h2></div></div>
+    <p class="jempty">填写上方 JD 与简历后点击「开始分析」；也可以点「用仓库样例试跑」，用仓库里的样例真实跑一遍。结果区将依次出现：匹配矩阵、缺口与选项、改写建议、证据层打回记录、trace 时间线。</p>
+  </section>
+  {% endif %}
+
+  <footer class="jfoot">
+    <div><b>边界说明</b>：本页所有结论来自真实运行；判定与改写是规则实现，不是模型生成。模型增强当前未在本页启用，页面不会伪装成已完成。</div>
+    <div>不联网、不爬取、不自动投递；JD 与简历只在本机内存与本地数据目录中处理。</div>
+  </footer>
+</main>
+
+<script src="{{ url_for('static', filename='jobsearch.js') }}"></script>
+</body>
+</html>
